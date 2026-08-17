@@ -1,17 +1,23 @@
-# Node
 node_modules/
 /dist/
-/.env
-
-# Kotlin/Android
-/.gradle/
 /build/
-/.idea/
-*.iml
-
-# Python (if any)
-__pycache__/
-*.pyc
-
-# Misc
+*.log
+.env*
 .DS_Store
+.idea/
+*.iml
+.gradle/
+*.class
+*.jar
+*.war
+*.ear
+*.pyc
+__pycache__/
+*.egg-info/
+.vscode/
+.sass-cache/
+.cache
+coverage/
+.npm/
+.yarn/
+.yarnrc.yml
