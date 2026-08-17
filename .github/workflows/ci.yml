@@ -1,0 +1,24 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [backend, mobile, kds-web]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        if: matrix.module == 'backend' || matrix.module == 'kds-web'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        run: |
+          if [ "${{ matrix.module }}" = "backend" ]; then cd backend && npm ci; fi
+          if [ "${{ matrix.module }}" = "kds-web" ]; then cd kds-web && npm ci; fi
+      - name: Run tests
+        run: |
+          if [ "${{ matrix.module }}" = "backend" ]; then cd backend && npm test; fi
+          if [ "${{ matrix.module }}" = "kds-web" ]; then cd kds-web && npm test; fi
