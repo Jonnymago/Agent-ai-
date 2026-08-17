@@ -1,0 +1,17 @@
+# Node
+node_modules/
+/dist/
+/.env
+
+# Kotlin/Android
+/.gradle/
+/build/
+/.idea/
+*.iml
+
+# Python (if any)
+__pycache__/
+*.pyc
+
+# Misc
+.DS_Store
