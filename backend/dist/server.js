@@ -8,20 +8,40 @@ const cors_1 = __importDefault(require("cors"));
 const ws_1 = require("ws");
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
-const url_1 = require("url");
 const fs_1 = __importDefault(require("fs"));
+const qrcode_1 = __importDefault(require("qrcode"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
-const __filename = (0, url_1.fileURLToPath)(import.meta.url);
-const __dirname = path_1.default.dirname(__filename);
+const __dirname = path_1.default.resolve(); // directory of the running script (dist when built)
+const appRoot = path_1.default.resolve(__dirname, '..'); // backend root
 // Middleware
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 // Serve static files from public directory
-app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
+app.use(express_1.default.static(path_1.default.join(appRoot, 'public')));
 // Specific route for waiter interface
 app.get('/waiter', (req, res) => {
-    res.sendFile(path_1.default.join(__dirname, '../public/waiter/index.html'));
+    res.sendFile(path_1.default.join(appRoot, 'public', 'waiter', 'index.html'));
+});
+// Specific route for kds interface
+app.get('/kds', (req, res) => {
+    res.sendFile(path_1.default.join(appRoot, 'public', 'kds', 'index.html'));
+});
+// Specific route for admin interface
+app.get('/admin', (req, res) => {
+    res.sendFile(path_1.default.join(appRoot, 'public', 'admin', 'index.html'));
+});
+// Specific route for totem interface
+app.get('/totem', (req, res) => {
+    res.sendFile(path_1.default.join(appRoot, 'public', 'totem', 'index.html'));
+});
+// Specific route for menu QR interface (same as totem)
+app.get('/menu', (req, res) => {
+    res.sendFile(path_1.default.join(appRoot, 'public', 'totem', 'index.html'));
+});
+// Specific route for admin QR print
+app.get('/admin/qr-print', (req, res) => {
+    res.sendFile(path_1.default.join(appRoot, 'public', 'admin', 'qr-print.html'));
 });
 // Helper to read JSON files
 function readJsonFile(filePath) {
@@ -37,7 +57,7 @@ let wss;
 function broadcast(data) {
     const message = JSON.stringify(data);
     wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
+        if (client.readyState === ws_1.WebSocket.OPEN) {
             client.send(message);
         }
     });
@@ -45,7 +65,7 @@ function broadcast(data) {
 // API routes
 app.get('/api/menu', (req, res) => {
     try {
-        const menu = readJsonFile(path_1.default.join(__dirname, '../data/menu.json'));
+        const menu = readJsonFile(path_1.default.join(appRoot, 'data', 'menu.json'));
         res.json(menu);
     }
     catch (e) {
@@ -55,7 +75,7 @@ app.get('/api/menu', (req, res) => {
 });
 app.get('/api/tables', (req, res) => {
     try {
-        const tables = readJsonFile(path_1.default.join(__dirname, '../data/tables.json'));
+        const tables = readJsonFile(path_1.default.join(appRoot, 'data', 'tables.json'));
         res.json(tables);
     }
     catch (e) {
@@ -65,7 +85,7 @@ app.get('/api/tables', (req, res) => {
 });
 app.get('/api/settings', (req, res) => {
     try {
-        const settings = readJsonFile(path_1.default.join(__dirname, '../data/settings.json'));
+        const settings = readJsonFile(path_1.default.join(appRoot, 'data', 'settings.json'));
         res.json(settings);
     }
     catch (e) {
@@ -75,7 +95,7 @@ app.get('/api/settings', (req, res) => {
 });
 app.post('/api/settings/totem', (req, res) => {
     try {
-        const settingsPath = path_1.default.join(__dirname, '../data/settings.json');
+        const settingsPath = path_1.default.join(appRoot, 'data', 'settings.json');
         const settings = readJsonFile(settingsPath);
         settings.totem_enabled = !settings.totem_enabled;
         writeJsonFile(settingsPath, settings);
@@ -116,6 +136,30 @@ app.patch('/api/orders/:id/status', (req, res) => {
         res.status(500).json({ error: 'status_update_failed' });
     }
 });
+// NEW: API to generate QR codes for tables
+app.get('/api/tables/qr-codes', async (req, res) => {
+    try {
+        const tables = readJsonFile(path_1.default.join(appRoot, 'data', 'tables.json'));
+        const host = req.get('host') || 'localhost:3000';
+        const protocol = req.protocol; // 'http' or 'https'
+        const baseUrl = `${protocol}://${host}`;
+        const qrCodes = await Promise.all(tables.map(async (table) => {
+            const targetUrl = `${baseUrl}/menu?table=${table.id}`;
+            const qrCodeDataUrl = await qrcode_1.default.toDataURL(targetUrl);
+            return {
+                tableId: table.id,
+                tableName: table.name || `Tavolo ${table.id}`,
+                targetUrl,
+                qrCodeDataUrl,
+            };
+        }));
+        res.json(qrCodes);
+    }
+    catch (e) {
+        console.error('Error generating QR codes', e);
+        res.status(500).json({ error: 'Failed to generate QR codes' });
+    }
+});
 // Simple health check
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -129,8 +173,8 @@ wss.on('connection', (ws) => {
     console.log('Client connected via WS');
     // Send current state on connection
     try {
-        const tables = readJsonFile(path_1.default.join(__dirname, '../data/tables.json'));
-        const settings = readJsonFile(path_1.default.join(__dirname, '../data/settings.json'));
+        const tables = readJsonFile(path_1.default.join(appRoot, 'data', 'tables.json'));
+        const settings = readJsonFile(path_1.default.join(appRoot, 'data', 'settings.json'));
         ws.send(JSON.stringify({ type: 'INIT_STATE', payload: { tables, settings } }));
     }
     catch (e) {
