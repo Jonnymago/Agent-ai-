@@ -1,0 +1,1 @@
+{"categories":[{"name":"Bevande","items":[{"id":1,"name":"Acqua","price":1.00,"ingredients":[],"variants":[]} ,{"id":2,"name":"Coca Cola","price":2.50,"ingredients":["Zucchero"],"variants":[{"name":"Grande","price":0.5},{"name":"Piccola","price":0}]}]}]}

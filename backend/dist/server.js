@@ -7,155 +7,139 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const ws_1 = require("ws");
 const dotenv_1 = __importDefault(require("dotenv"));
-const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const url_1 = require("url");
+const fs_1 = __importDefault(require("fs"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
+const __filename = (0, url_1.fileURLToPath)(import.meta.url);
+const __dirname = path_1.default.dirname(__filename);
+// Middleware
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 // Serve static files from public directory
-app.use(express_1.default.static(path_1.default.join(__dirname, '..', 'public')));
-// Helper to read JSON file
-const readJSONFile = (filePath) => {
+app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
+// Specific route for waiter interface
+app.get('/waiter', (req, res) => {
+    res.sendFile(path_1.default.join(__dirname, '../public/waiter/index.html'));
+});
+// Helper to read JSON files
+function readJsonFile(filePath) {
     const data = fs_1.default.readFileSync(filePath, 'utf8');
     return JSON.parse(data);
-};
-// Helper to write JSON file
-const writeJSONFile = (filePath, data) => {
+}
+// Helper to write JSON files
+function writeJsonFile(filePath, data) {
     fs_1.default.writeFileSync(filePath, JSON.stringify(data, null, 2));
-};
-// Paths to data files
-const MENU_PATH = path_1.default.join(__dirname, '..', 'data', 'menu.json');
-const TABLES_PATH = path_1.default.join(__dirname, '..', 'data', 'tables.json');
-const SETTINGS_PATH = path_1.default.join(__dirname, '..', 'data', 'settings.json');
-// Load menu once at startup
-let menuCache = null;
-try {
-    menuCache = readJSONFile(MENU_PATH);
 }
-catch (e) {
-    console.error('Failed to load menu.json', e);
-    menuCache = { categories: [] };
+// Broadcast helper
+let wss;
+function broadcast(data) {
+    const message = JSON.stringify(data);
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(message);
+        }
+    });
 }
-// In-memory order store (for simplicity, we'll use an array)
-// In a real system, you'd use a database.
-let orders = [];
-let nextOrderId = 1;
-// REST API Routes
-// GET /api/menu
+// API routes
 app.get('/api/menu', (req, res) => {
-    res.json(menuCache);
-});
-// GET /api/tables
-app.get('/api/tables', (req, res) => {
     try {
-        const tablesData = readJSONFile(TABLES_PATH);
-        res.json(tablesData);
+        const menu = readJsonFile(path_1.default.join(__dirname, '../data/menu.json'));
+        res.json(menu);
     }
     catch (e) {
+        console.error('Error reading menu.json', e);
+        res.status(500).json({ error: 'Failed to load menu' });
+    }
+});
+app.get('/api/tables', (req, res) => {
+    try {
+        const tables = readJsonFile(path_1.default.join(__dirname, '../data/tables.json'));
+        res.json(tables);
+    }
+    catch (e) {
+        console.error('Error reading tables.json', e);
         res.status(500).json({ error: 'Failed to load tables' });
     }
 });
-// GET /api/settings
 app.get('/api/settings', (req, res) => {
     try {
-        const settingsData = readJSONFile(SETTINGS_PATH);
-        res.json(settingsData);
+        const settings = readJsonFile(path_1.default.join(__dirname, '../data/settings.json'));
+        res.json(settings);
     }
     catch (e) {
+        console.error('Error reading settings.json', e);
         res.status(500).json({ error: 'Failed to load settings' });
     }
 });
-// POST /api/settings/totem
 app.post('/api/settings/totem', (req, res) => {
-    const { enabled } = req.body;
-    if (typeof enabled !== 'boolean') {
-        return res.status(400).json({ error: 'Invalid payload: expected boolean enabled' });
-    }
     try {
-        const settings = readJSONFile(SETTINGS_PATH);
-        settings.totem_enabled = enabled;
-        writeJSONFile(SETTINGS_PATH, settings);
-        // Broadcast totem state change via WebSocket
-        const totemEvent = JSON.stringify({ type: 'TOTEM_STATE', enabled });
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(totemEvent);
-            }
-        });
-        res.json({ success: true, totem_enabled: enabled });
+        const settingsPath = path_1.default.join(__dirname, '../data/settings.json');
+        const settings = readJsonFile(settingsPath);
+        settings.totem_enabled = !settings.totem_enabled;
+        writeJsonFile(settingsPath, settings);
+        // Broadcast the update
+        broadcast({ type: 'SETTINGS_UPDATE', payload: settings });
+        res.json({ success: true, totem_enabled: settings.totem_enabled });
     }
     catch (e) {
-        res.status(500).json({ error: 'Failed to update settings' });
+        console.error('Error toggling totem', e);
+        res.status(500).json({ error: 'Failed to toggle totem' });
     }
 });
-// POST /api/orders
-app.post('/api/orders', (req, res) => {
-    const { tableId, items } = req.body;
-    if (!tableId || !Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({ error: 'Invalid order: tableId and non-empty items array required' });
+app.post('/api/orders', async (req, res) => {
+    const payload = req.body;
+    try {
+        // In a real app, we would save to a database. For now, we just acknowledge.
+        // Broadcast new order to WS clients
+        broadcast({ type: 'NEW_ORDER', payload });
+        res.json({ result: 'order_received' });
     }
-    // Validate items against menu? We'll skip for now but could be added.
-    const order = {
-        id: nextOrderId++,
-        tableId,
-        items,
-        status: 'in_attesa', // initial status
-        createdAt: new Date().toISOString(),
-    };
-    orders.push(order);
-    // Broadcast new order via WebSocket
-    const newOrderEvent = JSON.stringify({ type: 'NEW_ORDER', order });
-    wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(newOrderEvent);
-        }
-    });
-    res.status(201).json(order);
+    catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'order_failed' });
+    }
 });
-// PATCH /api/orders/:id/status
 app.patch('/api/orders/:id/status', (req, res) => {
-    const orderId = parseInt(req.params.id, 10);
+    const { id } = req.params;
     const { status } = req.body;
-    const validStatuses = ['in_attesa', 'in_preparazione', 'pronto', 'completato'];
-    if (!status || !validStatuses.includes(status)) {
-        return res.status(400).json({ error: `Invalid status. Must be one of ${validStatuses.join(', ')}` });
+    try {
+        // In a real app, update the order in the database and broadcast.
+        // For now, we just acknowledge and broadcast a status change.
+        // We don't have the order object, so we broadcast a minimal payload.
+        broadcast({ type: 'STATUS_CHANGED', payload: { id, status } });
+        res.json({ success: true });
     }
-    const orderIndex = orders.findIndex((o) => o.id === orderId);
-    if (orderIndex === -1) {
-        return res.status(404).json({ error: 'Order not found' });
+    catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'status_update_failed' });
     }
-    const oldStatus = orders[orderIndex].status;
-    orders[orderIndex].status = status;
-    orders[orderIndex].updatedAt = new Date().toISOString();
-    // Broadcast status change via WebSocket
-    const statusEvent = JSON.stringify({ type: 'STATUS_CHANGED', orderId, status });
-    wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(statusEvent);
-        }
-    });
-    res.json({ success: true, order: orders[orderIndex] });
 });
-// Health check
+// Simple health check
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
-// Start HTTP server
-const port = process.env.PORT || 3000;
-const server = app.listen(port, () => {
-    console.log(`Backend listening on port ${port}`);
+const server = app.listen(process.env.PORT || 3000, () => {
+    console.log(`Backend listening on port ${process.env.PORT || 3000}`);
 });
-// WebSocket Server
-const wss = new ws_1.Server({ server });
+// WebSocket for real‑time updates
+wss = new ws_1.Server({ server });
 wss.on('connection', (ws) => {
     console.log('Client connected via WS');
+    // Send current state on connection
+    try {
+        const tables = readJsonFile(path_1.default.join(__dirname, '../data/tables.json'));
+        const settings = readJsonFile(path_1.default.join(__dirname, '../data/settings.json'));
+        ws.send(JSON.stringify({ type: 'INIT_STATE', payload: { tables, settings } }));
+    }
+    catch (e) {
+        console.error('Error sending initial state', e);
+    }
     ws.on('message', (msg) => {
         console.log('Received WS message:', msg.toString());
-        // Echo back for now (or handle client messages if needed)
+        // We don't expect messages from clients for now, but we could handle them.
+        // Echo back for now
         ws.send(JSON.stringify({ echo: msg.toString() }));
-    });
-    ws.on('close', () => {
-        console.log('Client disconnected');
     });
 });

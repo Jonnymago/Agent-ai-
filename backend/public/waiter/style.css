@@ -1,0 +1,63 @@
+/* Dark mode high contrast */
+:root {
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --primary-color: #0d47a1;
+  --accent-color: #ffab00;
+  --error-color: #d32f2f;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+header.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.8rem 1rem; background: var(--primary-color);
+  color: #fff; font-size: 1.2rem;
+}
+.icon-btn {
+  background: none; border: none; color: #fff; font-size: 1.5rem;
+  min-width: 48px; min-height: 48px; cursor: pointer;
+}
+main#app { padding: 1rem; }
+.screen { display: none; }
+.screen.active { display: block; }
+.grid { display: grid; gap: 0.8rem; }
+/* Tables grid */
+#tablesGrid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+.table-card {
+  padding: 0.6rem; text-align: center; border-radius: 0.4rem; cursor: pointer;
+  background: #1e1e1e; border: 2px solid transparent;
+}
+.table-card.free { border-color: #4caf50; }
+.table-card.occupied { border-color: #f44336; }
+.table-card.bill { border-color: #ffeb3b; }
+/* Category bar */
+.category-bar { display: flex; overflow-x: auto; gap: 0.5rem; margin-bottom: 1rem; }
+.category-btn {
+  flex: 0 0 auto; padding: 0.4rem 0.8rem; border-radius: 0.4rem; background: #2c2c2c;
+  color: #fff; border: none; cursor: pointer; min-height: 48px;
+}
+.category-btn.active { background: var(--primary-color); }
+/* Products grid */
+#productsGrid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+.product-card { background: #1e1e1e; padding: 0.6rem; border-radius: 0.4rem; cursor: pointer; }
+.product-card h3 { margin: 0 0 0.3rem 0; font-size: 1rem; }
+.product-card .price { font-weight: bold; }
+/* Order list */
+.order-list { list-style: none; padding: 0; margin: 0 0 1rem 0; }
+.order-item { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid #333; }
+.total { font-size: 1.2rem; margin-bottom: 1rem; }
+.primary-btn {
+  width: 100%; padding: 0.8rem; font-size: 1rem; background: var(--primary-color);
+  color: #fff; border: none; border-radius: 0.4rem; cursor: pointer; min-height: 48px;
+}
+.primary-btn:disabled { background: #555; cursor: not-allowed; }
+/* Responsive */
+@media (min-width: 600px) {
+  #tablesGrid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  #productsGrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}

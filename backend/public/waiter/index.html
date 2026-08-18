@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cameriere - Totem POS</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <h1>Cameriere</h1>
+    <button id="refreshBtn" class="icon-btn" aria-label="Aggiorna">⟳</button>
+  </header>
+
+  <main id="app">
+    <!-- Schermata 1: Mappa tavoli -->
+    <section id="tablesScreen" class="screen active">
+      <h2>Tavoli</h2>
+      <div id="tablesGrid" class="grid"></div>
+    </section>
+
+    <!-- Schermata 2: Menu -->
+    <section id="menuScreen" class="screen">
+      <h2>Menu</h2>
+      <div id="categoryBar" class="category-bar"></div>
+      <div id="productsGrid" class="grid"></div>
+    </section>
+
+    <!-- Schermata 3: Riepilogo -->
+    <section id="summaryScreen" class="screen">
+      <h2>Riepilogo</h2>
+      <ul id="orderList" class="order-list"></ul>
+      <div class="total">Totale: <span id="totalAmount">0,00 €</span></div>
+      <button id="sendOrderBtn" class="primary-btn">Invia in Cucina</button>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

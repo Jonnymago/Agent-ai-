@@ -1,0 +1,1 @@
+[{"id":1,"name":"Tavolo 1","type":"Standard","status":"libero"},{"id":2,"name":"Tavolo 2","type":"Standard","status":"occupato"},{"id":3,"name":"Tavolo 3","type":"Standard","status":"conto_richiesto"},{"id":4,"name":"Asporto","type":"Takeaway","status":"libero"}]
