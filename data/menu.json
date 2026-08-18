@@ -1,0 +1,46 @@
+{
+  "categories": [
+    {
+      "id": "1",
+      "name": "Bevande",
+      "items": [
+        {
+          "id": "b1",
+          "name": "Acqua naturale",
+          "price": 1.0,
+          "ingredients": ["acqua"],
+          "variants": [
+            { "name": "Frizzante", "extra": 0.5 },
+            { "name": "Grande", "extra": 1.0 }
+          ]
+        },
+        {
+          "id": "b2",
+          "name": "Coca Cola",
+          "price": 2.0,
+          "ingredients": ["acqua", "zucchero", "aromi"],
+          "variants": [
+            { "name": "Zero", "extra": 0.0 },
+            { "name": "Grande", "extra": 1.0 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "name": "Primi",
+      "items": [
+        {
+          "id": "p1",
+          "name": "Spaghetti alla Carbonara",
+          "price": 10.0,
+          "ingredients": ["spaghetti", "uovo", "guanciale", "pecorino", "pepe"],
+          "variants": [
+            { "name": "Porzione doppia", "extra": 5.0 },
+            { "name": "Senza guanciale", "extra": -2.0 }
+          ]
+        }
+      ]
+    }
+  ]
+}

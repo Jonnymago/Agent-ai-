@@ -1,0 +1,11 @@
+{
+  "tables": [
+    { "id": 1, "name": "Tavolo 1", "status": "libero" },
+    { "id": 2, "name": "Tavolo 2", "status": "libero" },
+    { "id": 3, "name": "Tavolo 3", "status": "libero" },
+    { "id": 4, "name": "Tavolo 4", "status": "libero" },
+    { "id": 5, "name": "Tavolo 5", "status": "libero" },
+    { "id": 6, "name": "Asporto", "status": "libero" },
+    { "id": 7, "name": "Banco", "status": "libero" }
+  ]
+}

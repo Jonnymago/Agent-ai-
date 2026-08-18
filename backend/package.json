@@ -9,19 +9,21 @@
     "test": "jest"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "ws": "^8.14.2",
-    "nano": "^10.0.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "nano": "^10.0.0",
+    "ws": "^8.14.2"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^4.17.21",
-    "@types/ws": "^8.5.10",
     "@types/jest": "^29.5.12",
+    "@types/node": "^26.2.0",
+    "@types/ws": "^8.5.10",
+    "jest": "^29.7.0",
     "ts-jest": "^29.1.2",
-    "typescript": "^5.4.5",
     "ts-node-dev": "^2.0.0",
-    "jest": "^29.7.0"
+    "typescript": "^5.4.5"
   }
 }
